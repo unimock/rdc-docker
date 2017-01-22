@@ -1,0 +1,24 @@
+version: '2'
+services:
+  rdc:
+    ##################################################
+    # BUILD section
+    ##################################################
+    build:
+      context: ./build
+      dockerfile: Dockerfile
+    ##################################################
+    # RUN section
+    ##################################################
+    image: unimock/rdc-docker:0.0.1
+    restart: unless-stopped
+    container_name: rdc
+    hostname: rdc-g7-dev1
+    privileged: true
+    ports:
+     - "24277:22"
+    volumes:
+     - /cust:/data/cust
+     - /Docker/rdc/service:/service               # ./ovw/etc/rsnapshot.conf, ...
+     - /Docker:/Docker
+     - /var/run/docker.sock:/var/run/docker.sock  # only for docker client

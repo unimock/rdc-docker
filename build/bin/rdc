@@ -1,0 +1,30 @@
+#!/bin/bash
+
+if [ "$1" != "sync" -o "$3" = "" ] ; then
+    echo " usage: `basename $0` sync <source> <target> [real]"
+    exit 0
+fi
+
+PORT=24277
+
+PAR="--dry-run "
+if [ "$4" = "real" ] ; then
+  PAR=""
+fi
+
+X=${2%:*}
+if [ "$X" != "$2" ] ; then
+  SOURCE="root@$2/"
+else
+  SOURCE="$2/"
+fi
+
+X=${3%:*}
+if [ "$X" != "$3" ] ; then
+  TARGET="root@$3"
+else
+  TARGET="$3"
+fi
+
+rsync -avzS ${PAR} --numeric-ids --delete -e "ssh -p ${PORT} -i /root/.ssh/id_rsa -o StrictHostKeyChecking=no" ${SOURCE} ${TARGET}
+
