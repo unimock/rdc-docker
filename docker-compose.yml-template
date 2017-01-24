@@ -10,10 +10,10 @@ services:
     ##################################################
     # RUN section
     ##################################################
-    image: unimock/rdc-docker:0.0.1
+    image: unimock/rdc-docker:0.0.3
     restart: unless-stopped
-    container_name: rdc
-    hostname: rdc-g7-dev1
+    container_name: rdc.XXX
+    hostname: rdc.XXX
     privileged: true
     ports:
      - "24277:22"

@@ -34,8 +34,6 @@ RUN apk add curl docker && \
     apk del docker && \
     mv /tmp/docker /usr/bin/ 
 
-
-
 RUN apk add py2-pip && \
     pip install --upgrade pip && \ 
     pip install docker-compose
@@ -46,7 +44,13 @@ COPY ./bin/ovw /usr/local/bin/ovw
 COPY ./bin/rdc /usr/local/bin/rdc
 RUN chmod a+x /usr/local/bin/*
 
-COPY ./bashrc   /root/.bashrc
+RUN echo ". /etc/profile" > /root/.bashrc
+RUN echo "export PS1='\H:\w\\$ '" >> /etc/profile
+RUN echo "alias ll='ls -alF'"     >> /etc/profile
+RUN echo 'export TERM="xterm"'    >> /etc/profile
+
+
+#COPY ./bashrc   /root/.bashrc
 COPY ./entry.sh /entry.sh
 
 EXPOSE 22

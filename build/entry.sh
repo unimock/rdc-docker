@@ -27,6 +27,8 @@ fi
 # Generate Host keys, if required
 if ! ls /etc/ssh/ssh_host_* 1> /dev/null 2>&1; then
     ssh-keygen -A
+    mkdir -p /service/ovw/etc/ssh
+    cp -a /etc/ssh/ssh_host_rsa_key* /service/ovw/etc/ssh
 fi
 
 # Fix permissions, if writable
