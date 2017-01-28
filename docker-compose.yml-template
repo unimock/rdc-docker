@@ -10,16 +10,16 @@ services:
     ##################################################
     # RUN section
     ##################################################
-    image: unimock/rdc-docker:latest
+    image: unimock/rdc-docker:0.0.4
     restart: unless-stopped
     container_name: rdc.XXX
     hostname: rdc.XXX
     privileged: true
+    environment:
+     - TRUSTED_ENVIRONMENT=no
     ports:
      - "24277:22"
     volumes:
-     - configure:/configure
-     #- /cust:/data/cust
      - /Docker/rdc/service:/service               # ./ovw/etc/rsnapshot.conf, ...
      - /Docker:/Docker
      - /var/run/docker.sock:/var/run/docker.sock  # only for docker client

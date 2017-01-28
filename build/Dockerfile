@@ -23,7 +23,6 @@ RUN apk update && \
     mkdir -p ~root/.ssh && chmod 700 ~root/.ssh/ && \
     sed -i -e 's/#Port 22/Port 22/' /etc/ssh/sshd_config && \
     sed -i -e 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
-    echo -e "Port 22\n" >> /etc/ssh/sshd_config && \
     cp -a /etc/ssh /etc/ssh.cache
 
 RUN apk add rsnapshot
@@ -49,8 +48,6 @@ RUN echo "export PS1='\H:\w\\$ '" >> /etc/profile
 RUN echo "alias ll='ls -alF'"     >> /etc/profile
 RUN echo 'export TERM="xterm"'    >> /etc/profile
 
-
-#COPY ./bashrc   /root/.bashrc
 COPY ./entry.sh /entry.sh
 
 EXPOSE 22

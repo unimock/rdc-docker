@@ -45,6 +45,15 @@ if [ ! -e ~/.ssh/authorized_keys ]; then
   echo "WARNING: No SSH authorized_keys found for root"
 fi
 
+if [ "$TRUSTED_ENVIRONMENT" = "yes" ] ; then
+  FI=/etc/ssh/sshd_config
+  sed -i -e 's/PasswordAuthentication no/PasswordAuthentication yes/'    $FI
+  sed -i -e 's/#PermitEmptyPasswords no/PermitEmptyPasswords yes/'       $FI
+  sed -i -e 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/'  $FI
+  FI=/etc/ssh/ssh_config
+  sed -i -e 's|# Host \*|Host *\n StrictHostKeyChecking no\n UserKnownHostsFile=/dev/null\n LogLevel=quiet|'  $FI
+fi
+
 stop() {
     echo "Received SIGINT or SIGTERM. Shutting down $DAEMON"
     # Get PID
