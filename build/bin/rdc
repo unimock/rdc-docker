@@ -1,17 +1,18 @@
 #!/bin/bash
 
-#PORT=24277
-PORT=22
+if [ "$RDC_PORT" = "" ] ; then
+  PORT="22"
+else
+  PORT="$RDC_PORT"
+fi
+
 HNAME=`hostname`
 SERVICE=$1 ; shift ; CMD=$1 ; shift
-
-#echo "NODE=$NODE CMD=$CMD"
 
 SPAR="-o StrictHostKeyChecking=no"
 if [ -f /root/.ssh/id_rsa ] ; then
   SPAR="$SPAR -i /root/.ssh/id_rsa"
 fi
-
 
 if [ "$CMD" != "sync" -a "$CMD" != "exec" -a "$CMD" != "snap" ] ; then                                                                                                                                     
     echo " usage: "
@@ -20,10 +21,10 @@ if [ "$CMD" != "sync" -a "$CMD" != "exec" -a "$CMD" != "snap" ] ; then
     echo "   `basename $0` <service.name>|. exec <command>"
     echo "   `basename $0` <service.name>|. exec <command>"
     echo " examples:"
+    echo "   `basename $0` rdc-pmgw1 exec  ......... hostname -i"
     echo "   `basename $0` . exec cat /etc/passwd ... "
-    echo "   `basename $0` rdc-pmgw1 exec  ......... login in rdc-pmgw1"
-    echo "   `basename $0` rdc-pmgw1 sync /Docker/Services/mta rdc-pmgw2:/Docker/Mock real"
-    echo "   `basename $0` rdc-pmgw1 snap daily /Docker/Backup rdc-pmgw2:/Docker/Services/mta,mh1-test"
+    echo "   `basename $0` . sync rdc-pmgw1:/Docker/Services/mta /Docker/rsync-test real"
+    echo "   `basename $0` . snap daily /Docker/Backup rdc-pmgw1:/Docker/Services/mta,mh1-test"
     echo ""
     exit 0                                                                                                                                                                         
 fi                                                                                                                                                                                 
@@ -31,7 +32,6 @@ fi
 if [ "$SERVICE" = "." ] ; then
   SERVICE=`hostname`
 fi
-
 
 if [ "$CMD" = "exec" ] ; then
   ssh -p ${PORT} ${SPAR} root@${SERVICE} $*
@@ -41,8 +41,9 @@ if [ "$CMD" = "snap" ] ; then
   B_CMD="$1" ; B_DIR="$2" ; shift ; shift
   list="$*"
   B_CFG="/tmp/rsnapshot.conf"
-  cp /etc/rsnapshot.conf-unimock       $B_CFG
-  sed -i -e "s|/rsnapshot/|${B_DIR}/|" $B_CFG 
+  cp /etc/rsnapshot.conf-unimock                      $B_CFG
+  sed -i -e "s|/rsnapshot/|${B_DIR}/|"                $B_CFG
+  sed -i -e "s|#ssh_args.*|ssh_args\t-p $PORT $SPAR|" $B_CFG
   for i in $list ; do
     S=${i%,*}"/"
     T=${i#*,}"/"
