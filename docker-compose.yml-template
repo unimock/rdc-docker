@@ -15,8 +15,6 @@ services:
     container_name: rdc.XXX
     hostname: rdc.XXX
     privileged: true
-    environment:
-     - TRUSTED_ENVIRONMENT=no
     ports:
      - "24277:22"
     volumes:

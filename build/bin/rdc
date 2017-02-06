@@ -7,6 +7,12 @@ SERVICE=$1 ; shift ; CMD=$1 ; shift
 
 #echo "NODE=$NODE CMD=$CMD"
 
+SPAR="-o StrictHostKeyChecking=no"
+if [ -f /root/.ssh/id_rsa ] ; then
+  SPAR="$SPAR -i /root/.ssh/id_rsa"
+fi
+
+
 if [ "$CMD" != "sync" -a "$CMD" != "exec" -a "$CMD" != "snap" ] ; then                                                                                                                                     
     echo " usage: "
     echo "   `basename $0` <service.name>|. sync <source> <target> [real]"                                                                                                         
@@ -28,15 +34,13 @@ fi
 
 
 if [ "$CMD" = "exec" ] ; then
-  ssh -p ${PORT} root@${SERVICE} $*
+  ssh -p ${PORT} ${SPAR} root@${SERVICE} $*
   exit $?
 fi
 if [ "$CMD" = "snap" ] ; then
   B_CMD="$1" ; B_DIR="$2" ; shift ; shift
   list="$*"
   B_CFG="/tmp/rsnapshot.conf"
-  #echo "dir=$B_DIR"
-  #echo "$list"
   cp /etc/rsnapshot.conf-unimock       $B_CFG
   sed -i -e "s|/rsnapshot/|${B_DIR}/|" $B_CFG 
   for i in $list ; do
@@ -44,15 +48,14 @@ if [ "$CMD" = "snap" ] ; then
     T=${i#*,}"/"
     echo -e "backup\t${S}\t${T}"    >> $B_CFG
   done
-  #echo "rsnapshot -c $B_CFG $B_CMD" 
-  ssh -p ${PORT} root@${SERVICE} "rsnapshot -c $B_CFG $B_CMD"    
+  scp -P ${PORT} ${SPAR} $B_CFG  root@${SERVICE}:$B_CFG
+  ssh -p ${PORT}  ${SPAR} root@${SERVICE} "rsnapshot -c $B_CFG $B_CMD"    
   exit $?
 fi
 
 if [ "$CMD" = "sync" ] ; then 
   PAR="--dry-run "
   if [ "$3" = "real" ] ; then PAR="" ; fi
-  if [ -f /root/.ssh/id_rsa ] ; then PAR="$PAR -i /root/.ssh/id_rsa " ; fi
   X=${1%:*}
   if [ "$X" != "$1" ] ; then
     SOURCE="root@$1/"
@@ -66,8 +69,7 @@ if [ "$CMD" = "sync" ] ; then
   else
     TARGET="$2"
   fi
-   #ssh -p ${PORT} root@${SERVICE} "rsync -avzS ${PAR} --numeric-ids --delete -e \"ssh -p ${PORT}  -o StrictHostKeyChecking=no\" ${SOURCE} ${TARGET}"
-   ssh -p ${PORT} root@${SERVICE} "rsync -avzS ${PAR} --numeric-ids --delete -e \"ssh -p ${PORT} \" ${SOURCE} ${TARGET}"
+   ssh -p ${PORT}  ${SPAR} root@${SERVICE} "rsync -avzS ${PAR} --numeric-ids --delete -e \"ssh -p ${PORT}  ${SPAR} \" ${SOURCE} ${TARGET}"
   exit $?
 fi
 
