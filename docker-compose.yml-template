@@ -10,7 +10,7 @@ services:
     ##################################################
     # RUN section
     ##################################################
-    image: unimock/rdc-docker:0.0.5
+    image: unimock/rdc-docker:0.0.6
     restart: unless-stopped
     container_name: rdc.XXX
     hostname: rdc.XXX
