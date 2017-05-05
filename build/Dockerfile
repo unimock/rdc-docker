@@ -14,7 +14,10 @@
 #      \__/| \__/ \__ |\_ \__  |
 #
 # Dockerfile for remote docker controller
-FROM docker:latest AS docker
+
+ARG DOCKER_IMAGE="docker:latest"
+
+FROM ${DOCKER_IMAGE} AS docker
 #########################################
 FROM alpine:latest
 
