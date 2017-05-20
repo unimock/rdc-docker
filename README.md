@@ -5,7 +5,7 @@
     * rsync
     * rsnapshot
 
-# configure 
+# configure (ovw)
     ./service/ovw/root/.ssh/authorized_keys    
     ./service/ovw/root/.ssh/id_rsa
     ./service/ovw/etc/rsnapshot.conf
