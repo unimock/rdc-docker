@@ -16,10 +16,11 @@
 # Dockerfile for remote docker controller
 
 ARG DOCKER_IMAGE="docker:latest"
+ARG ALPINE_IMAGE="alpine:latest"
 
 FROM ${DOCKER_IMAGE} AS docker
 #########################################
-FROM alpine:latest
+FROM ${ALPINE_IMAGE}
 
 MAINTAINER Uni Mock <unimock@gate-m.de>
 

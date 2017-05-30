@@ -9,10 +9,11 @@ services:
       dockerfile: Dockerfile
       args:
         DOCKER_IMAGE: docker:17.05.0-ce
+        ALPINE_IMAGE: alpine:3.6
     ##################################################
     # RUN section
     ##################################################
-    image: unimock/rdc-docker:0.0.7
+    image: unimock/rdc-docker:0.0.8
     restart: unless-stopped
     container_name: rdc.XXX
     hostname: rdc.XXX
