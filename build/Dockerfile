@@ -42,9 +42,7 @@ RUN rm -rf /var/cache/apk/*
 
 COPY --from=docker /usr/local/bin/docker          /usr/bin/docker
 
-COPY ./bin/ovw /usr/local/bin/ovw
-COPY ./bin/rdc /usr/local/bin/rdc
-RUN chmod a+x /usr/local/bin/*
+COPY ./bin/* /usr/local/bin/
 
 RUN echo ". /etc/profile" > /root/.bashrc
 RUN echo "export PS1='\H:\w\\$ '" >> /etc/profile
