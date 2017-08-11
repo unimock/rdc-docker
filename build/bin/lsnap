@@ -22,7 +22,7 @@ print_info()
   used=$( df -h $2 | grep "^/" | awk '{ print $3 }'  )
   pers=$( df -h $2 | grep "^/" | awk '{ print $5 }'  )
   host=`hostname`
-  printf "%-10s|%s|%03d|%-12s|%-5s|%-5s|%-5s|%s\n"  "INFO-$1"  "`date +'%Y-%m-%d|%k:%M:%S'`" $3  "$host" "$comp" "$used" "$pers" "$2"
+  printf "%-10s|%s|%03d|%-12s|%-6s|%-6s|%-6s|%s\n"  "INFO-$1"  "`date +'%Y-%m-%d|%H:%M:%S'`" $3  "$host" "$comp" "$used" "$pers" "$2"
 }
  
 get_age()
@@ -50,20 +50,18 @@ if [ ! -d $SDIR ] ; then
   exit 1
 fi
 
-echo ""
-
-START=`date +%s`
-
-print_info "START" $TDIR 0 
-
 mkdir -p $TDIR
 
 if [ ! -e $TDIR/script.sh ] ; then
-  echo '#!/bin/bash'  > $TDIR/script.sh
-  echo "`basename $0`$*"          >> $TDIR/script.sh
-  chmod a+x $TDIR/script.sh
+  echo '#!/bin/bash'       > $TDIR/script.sh
+  echo "`basename $0` $*" >> $TDIR/script.sh
+  chmod a+x                  $TDIR/script.sh
 fi
 
+START=`date +%s`
+echo ""
+print_info "START" $TDIR 0 
+echo ""
 
 age_array=($MASK)
 
@@ -76,8 +74,9 @@ for i in "${age_array[@]}" ; do
   arr_a[${i}]=">"
 done
 
-backup_list=`ls $TDIR`
+backup_list=`(cd $TDIR && ls  -d ????-??-??*/ 2>/dev/null)`
 for backup in $backup_list ; do
+  backup=${backup%/}
   age=`get_age $backup`
   if (( $age > ${age_array[-1]} )) ; then
     echo "remove backup: <$backup> because age>${age_array[-1]}"
@@ -91,9 +90,9 @@ done
 for i in `seq 0 ${age_array[-1]}` ; do
   cmd=""
   if (( $i == 0 )) ; then
-    echo "---------------------------------------------" 
-    echo "age|m|directory |operation|used |size |use%  "
-    echo "---------------------------------------------"
+    echo "-----------------------------------------------" 
+    echo "age|m|directory |operation|used  |size  |used %"
+    echo "-----------------------------------------------"
     rm -rf   $TDIR/$(get_date $i)
     mkdir -p $TDIR/$(get_date $i)
     cp -la $SDIR/.  $TDIR/$(get_date $i)
@@ -129,10 +128,11 @@ for i in `seq 0 ${age_array[-1]}` ; do
     used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
     pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  ) 
   fi
-  printf "%03d|%1s|%-10s|%-9s|%-5s|%-5s|%-5s|\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$used" "$comp" "$pers"
+  printf "%03d|%1s|%-10s|%-9s|%-6s|%-6s|%-6s|\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$used" "$comp" "$pers"
 done
 
 END=`date +%s`
+echo ""
 print_info "END"   $TDIR $((END-START))
 echo ""
 exit 0
