@@ -3,7 +3,7 @@
 _help()
 {
   echo ""
-  echo "usage: `basename $0` <mask> <source-dir> <target-dir> [<days from now>]]"
+  echo "usage: `basename $0` <mask> <source-dir> <target-dir> [<fake days from now> 0..today]]"
   echo ""
   echo "     example:"
   echo "       `basename $0` 0,1,2,3,4,5,6,7,14,21,28 /Docker/Services/traefik ./test/treafik"
@@ -16,6 +16,15 @@ if [ "$4" != "" ] ; then
   today=`expr $(date +%s) + ${4} \* 86400`
 fi
 
+print_info()
+{
+  comp=$( df -h $2 | grep "^/" | awk '{ print $2 }'  )
+  used=$( df -h $2 | grep "^/" | awk '{ print $3 }'  )
+  pers=$( df -h $2 | grep "^/" | awk '{ print $5 }'  )
+  host=`hostname`
+  printf "%-10s|%s|%03d|%-12s|%-5s|%-5s|%-5s|%s\n"  "INFO-$1"  "`date +'%Y-%m-%d|%k:%M:%S'`" $3  "$host" "$comp" "$used" "$pers" "$2"
+}
+ 
 get_age()
 {
    echo `expr  \( ${today} - $(date -d $1 +%s) \) / 86400`
@@ -27,9 +36,6 @@ get_date()
   d=`date -d @${s} +"%Y-%m-%d"`
   echo $d
 }
-
-
-
 
 if [ "$3" = "" ] ; then
   _help
@@ -45,10 +51,19 @@ if [ ! -d $SDIR ] ; then
 fi
 
 echo ""
-echo "START: <`basename $0` $*> ..." 
 
+START=`date +%s`
+
+print_info "START" $TDIR 0 
 
 mkdir -p $TDIR
+
+if [ ! -e $TDIR/script.sh ] ; then
+  echo '#!/bin/bash'  > $TDIR/script.sh
+  echo "`basename $0`$*"          >> $TDIR/script.sh
+  chmod a+x $TDIR/script.sh
+fi
+
 
 age_array=($MASK)
 
@@ -76,9 +91,9 @@ done
 for i in `seq 0 ${age_array[-1]}` ; do
   cmd=""
   if (( $i == 0 )) ; then
-    echo "-------------------------------------" 
-    echo "age|m|directory |operation|used |size"
-    echo "-------------------------------------"
+    echo "---------------------------------------------" 
+    echo "age|m|directory |operation|used |size |use%  "
+    echo "---------------------------------------------"
     rm -rf   $TDIR/$(get_date $i)
     mkdir -p $TDIR/$(get_date $i)
     cp -la $SDIR/.  $TDIR/$(get_date $i)
@@ -112,6 +127,12 @@ for i in `seq 0 ${age_array[-1]}` ; do
   else 
     comp=$( df -h $TDIR | grep "^/" | awk '{ print $2 }'  )
     used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
+    pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  ) 
   fi
-  printf "%03d|%1s|%-10s|%-9s|%-5s|%-5s\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$used" "$comp"
+  printf "%03d|%1s|%-10s|%-9s|%-5s|%-5s|%-5s|\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$used" "$comp" "$pers"
 done
+
+END=`date +%s`
+print_info "END"   $TDIR $((END-START))
+echo ""
+exit 0

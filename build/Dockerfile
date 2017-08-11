@@ -25,7 +25,7 @@ FROM ${ALPINE_IMAGE}
 MAINTAINER Uni Mock <unimock@gate-m.de>
 
 RUN apk update && \
-    apk add bash openssh rsync  && \
+    apk add bash openssh rsync git  && \
     mkdir -p ~root/.ssh && chmod 700 ~root/.ssh/ && \
     sed -i -e 's/#Port 22/Port 22/' /etc/ssh/sshd_config && \
     sed -i -e 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
