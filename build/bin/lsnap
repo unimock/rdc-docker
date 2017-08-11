@@ -1,0 +1,117 @@
+#!/bin/bash
+
+_help()
+{
+  echo ""
+  echo "usage: `basename $0` <mask> <source-dir> <target-dir> [<days from now>]]"
+  echo ""
+  echo "     example:"
+  echo "       `basename $0` 0,1,2,3,4,5,6,7,14,21,28 /Docker/Services/traefik ./test/treafik"
+  echo ""
+  exit 0
+}
+
+today=$(date +%s)
+if [ "$4" != "" ] ; then
+  today=`expr $(date +%s) + ${4} \* 86400`
+fi
+
+get_age()
+{
+   echo `expr  \( ${today} - $(date -d $1 +%s) \) / 86400`
+}
+
+get_date() 
+{
+  s=`expr ${today} - ${1} \* 86400`
+  d=`date -d @${s} +"%Y-%m-%d"`
+  echo $d
+}
+
+
+
+
+if [ "$3" = "" ] ; then
+  _help
+fi
+
+MASK=$( echo $1 | sed 's/,/ /g' )
+SDIR="$2"
+TDIR="$3"
+
+if [ ! -d $SDIR ] ; then
+  echo "error source directory: <$SDIR> does not exists!"
+  exit 1
+fi
+
+echo ""
+echo "START: <`basename $0` $*> ..." 
+
+
+mkdir -p $TDIR
+
+age_array=($MASK)
+
+for i in `seq 0 ${age_array[-1]}` ; do
+  arr_b[$i]=""
+  arr_a[$i]=""
+done
+
+for i in "${age_array[@]}" ; do
+  arr_a[${i}]=">"
+done
+
+backup_list=`ls $TDIR`
+for backup in $backup_list ; do
+  age=`get_age $backup`
+  if (( $age > ${age_array[-1]} )) ; then
+    echo "remove backup: <$backup> because age>${age_array[-1]}"
+    rm -rf $TDIR/$backup
+  else
+    arr_b[$age]=$backup  
+  fi
+done
+
+
+for i in `seq 0 ${age_array[-1]}` ; do
+  cmd=""
+  if (( $i == 0 )) ; then
+    echo "-------------------------------------" 
+    echo "age|m|directory |operation|used |size"
+    echo "-------------------------------------"
+    rm -rf   $TDIR/$(get_date $i)
+    mkdir -p $TDIR/$(get_date $i)
+    cp -la $SDIR/.  $TDIR/$(get_date $i)
+    cmd="created"
+  fi
+
+  if [ -d $TDIR/$(get_date $i) ] ; then 
+     arr_b[$i]=$(get_date $i)
+  fi
+
+  if [ "${arr_a[$i]}" = ""  -a "${arr_b[$i]}" != "" ] ; then
+    for (( c=$i+1 ; c<=${age_array[-1]}; c++ )) ; do
+      if [ "${arr_b[$c]}" != "" ] ; then
+        cmd="removed"
+        break
+      fi
+      if [ "${arr_a[$c]}" = ">" ] ; then
+        break ;
+      fi
+    done
+  fi
+  if [ "$cmd" = "removed" ] ; then
+    rm -Rf $TDIR/${arr_b[$i]} 
+  fi
+
+  dat=${arr_b[$i]}
+  if [ "$cmd" = "" -a "$dat" != "" ] ; then cmd="kept" ; fi
+  if [ "$cmd" = "" ] ; then
+    comp=""
+    used=""
+  else 
+    comp=$( df -h $TDIR | grep "^/" | awk '{ print $2 }'  )
+    used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
+  fi
+  printf "%03d|%1s|%-10s|%-9s|%-5s|%-5s\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$used" "$comp"
+done
