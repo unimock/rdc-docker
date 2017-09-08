@@ -45,10 +45,11 @@ MASK=$( echo $1 | sed 's/,/ /g' )
 SDIR="$2"
 TDIR="$3"
 
-if [ ! -d $SDIR ] ; then
-  echo "error source directory: <$SDIR> does not exists!"
-  exit 1
-fi
+# ist SDIR remote, dann kein check
+#if [ ! -d $SDIR ] ; then
+#  echo "error source directory: <$SDIR> does not exists!"
+#  exit 1
+#fi
 
 mkdir -p $TDIR
 
@@ -74,13 +75,32 @@ for i in "${age_array[@]}" ; do
   arr_a[${i}]=">"
 done
 
+comp=$( df -h $TDIR | grep "^/" | awk '{ print $2 }'  )
+used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
+pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  ) 
+  
+  echo "------------------------------------------------" 
+  echo "age|m|directory |operation|used  |size  |used %"
+  echo "------------------------------------------------"
+cmd=""
+printf "   |%1s|%-10s|%-9s|%-6s|%-6s|%-6s|\n" "S" "" "$cmd" "$used" "$comp" "$pers"
+
 backup_list=`(cd $TDIR && ls  -d ????-??-??*/ 2>/dev/null)`
 for backup in $backup_list ; do
   backup=${backup%/}
   age=`get_age $backup`
   if (( $age > ${age_array[-1]} )) ; then
-    echo "remove backup: <$backup> because age>${age_array[-1]}"
+    #echo "remove backup: <$backup> because age>${age_array[-1]}"
+    
     rm -rf $TDIR/$backup
+   
+    
+comp=$( df -h $TDIR | grep "^/" | awk '{ print $2 }'  )
+used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
+pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  )
+cmd="removed"
+printf "%03d|%1s|%-10s|%-9s|%-6s|%-6s|%-6s|\n" $age "R" "$backup" "$cmd" "$used" "$comp" "$pers"
+    
   else
     arr_b[$age]=$backup  
   fi
@@ -90,12 +110,14 @@ done
 for i in `seq 0 ${age_array[-1]}` ; do
   cmd=""
   if (( $i == 0 )) ; then
-    echo "-----------------------------------------------" 
-    echo "age|m|directory |operation|used  |size  |used %"
-    echo "-----------------------------------------------"
+    echo "------------------------------------------------"
+    
+    #echo "rsync -azS --numeric-ids --delete -e \"ssh -p 22 -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa\" $SDIR/./ $TDIR/latest/"   
+    rsync -azS --numeric-ids --delete -e "ssh -p 22 -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa" $SDIR/./ $TDIR/latest/   
+                    
     rm -rf   $TDIR/$(get_date $i)
     mkdir -p $TDIR/$(get_date $i)
-    cp -la $SDIR/.  $TDIR/$(get_date $i)
+    cp -la $TDIR/latest/.  $TDIR/$(get_date $i)
     cmd="created"
   fi
 

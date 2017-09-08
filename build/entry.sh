@@ -70,7 +70,7 @@ fi
 #fi
 
 FI=/etc/ssh/ssh_config
-sed -i -e 's|# Host \*|Host *\n StrictHostKeyChecking no\n UserKnownHostsFile=/dev/null|'  $FI
+sed -i -e 's|# Host \*|Host *\n StrictHostKeyChecking no\n UserKnownHostsFile=/dev/null\n LogLevel ERROR|'  $FI
 
 
 stop() {
