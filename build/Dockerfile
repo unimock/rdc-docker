@@ -31,7 +31,7 @@ RUN apk update && \
     sed -i -e 's/#PasswordAuthentication yes/PasswordAuthentication no/' /etc/ssh/sshd_config && \
     cp -a /etc/ssh /etc/ssh.cache
 
-RUN apk add rsnapshot
+RUN apk add rsnapshot tzdata
 COPY ./rsnapshot.conf /etc/rsnapshot.conf-unimock
 
 RUN apk add py2-pip && \
@@ -48,6 +48,8 @@ RUN echo ". /etc/profile" > /root/.bashrc
 RUN echo "export PS1='\H:\w\\$ '" >> /etc/profile
 RUN echo "alias ll='ls -alF'"     >> /etc/profile
 RUN echo 'export TERM="xterm"'    >> /etc/profile
+
+RUN cp -f /usr/share/zoneinfo/Europe/Berlin /etc/localtime
 
 COPY ./entry.sh /entry.sh
 
