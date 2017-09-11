@@ -20,6 +20,7 @@ print_info()
 {
   comp=$( df -h $2 | grep "^/" | awk '{ print $2 }'  )
   used=$( df -h $2 | grep "^/" | awk '{ print $3 }'  )
+  free=$( df -h $2 | grep "^/" | awk '{ print $4 }'  ) 
   pers=$( df -h $2 | grep "^/" | awk '{ print $5 }'  )
   host=`hostname`
   printf "%-10s|%s|%03d|%-12s|%-6s|%-6s|%-6s|%s\n"  "INFO-$1"  "`date +'%Y-%m-%d|%H:%M:%S'`" $3  "$host" "$comp" "$used" "$pers" "$2"
@@ -45,19 +46,12 @@ MASK=$( echo $1 | sed 's/,/ /g' )
 SDIR="$2"
 TDIR="$3"
 
-# ist SDIR remote, dann kein check
-#if [ ! -d $SDIR ] ; then
-#  echo "error source directory: <$SDIR> does not exists!"
-#  exit 1
-#fi
-
 mkdir -p $TDIR
 
-if [ ! -e $TDIR/script.sh ] ; then
-  echo '#!/bin/bash'       > $TDIR/script.sh
-  echo "`basename $0` $*" >> $TDIR/script.sh
-  chmod a+x                  $TDIR/script.sh
-fi
+echo '#!/bin/bash'       > $TDIR/script.sh
+echo "`basename $0` $*" >> $TDIR/script.sh
+chmod a+x                  $TDIR/script.sh
+
 
 START=`date +%s`
 echo ""
@@ -77,29 +71,30 @@ done
 
 comp=$( df -h $TDIR | grep "^/" | awk '{ print $2 }'  )
 used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
-pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  ) 
+free=$( df -h $TDIR | grep "^/" | awk '{ print $4 }'  ) 
+pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  )
+
+  echo "Backup-Source: ${SDIR}"
+  echo "Backup-Target: ${host}:${TDIR}"
+  echo "-------------------------------------------------------" 
+  echo "age|m|directory |operation|size  |used  |free  |used %|"
+  echo "-------------------------------------------------------"
   
-  echo "------------------------------------------------" 
-  echo "age|m|directory |operation|used  |size  |used %"
-  echo "------------------------------------------------"
 cmd=""
-printf "   |%1s|%-10s|%-9s|%-6s|%-6s|%-6s|\n" "S" "" "$cmd" "$used" "$comp" "$pers"
+printf "   |%1s|%-10s|%-9s|%-6s|%-6s|%-6s|%-6s|\n" "S" "" "$cmd" "$comp" "$used" "$free" "$pers"
 
 backup_list=`(cd $TDIR && ls  -d ????-??-??*/ 2>/dev/null)`
 for backup in $backup_list ; do
   backup=${backup%/}
   age=`get_age $backup`
   if (( $age > ${age_array[-1]} )) ; then
-    #echo "remove backup: <$backup> because age>${age_array[-1]}"
-    
     rm -rf $TDIR/$backup
-   
-    
 comp=$( df -h $TDIR | grep "^/" | awk '{ print $2 }'  )
-used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
+used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  )
+free=$( df -h $TDIR | grep "^/" | awk '{ print $4 }'  ) 
 pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  )
 cmd="removed"
-printf "%03d|%1s|%-10s|%-9s|%-6s|%-6s|%-6s|\n" $age "R" "$backup" "$cmd" "$used" "$comp" "$pers"
+printf "%03d|%1s|%-10s|%-9s|%-6s|%-6s|%-6s|%-6s|\n" $age "R" "$backup" "$cmd" "$comp" "$used" "$free" "$pers"
     
   else
     arr_b[$age]=$backup  
@@ -110,11 +105,8 @@ done
 for i in `seq 0 ${age_array[-1]}` ; do
   cmd=""
   if (( $i == 0 )) ; then
-    echo "------------------------------------------------"
-    
-    #echo "rsync -azS --numeric-ids --delete -e \"ssh -p 22 -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa\" $SDIR/./ $TDIR/latest/"   
+    echo "-------------------------------------------------------"
     rsync -azS --numeric-ids --delete -e "ssh -p 22 -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa" $SDIR/./ $TDIR/latest/   
-                    
     rm -rf   $TDIR/$(get_date $i)
     mkdir -p $TDIR/$(get_date $i)
     cp -la $TDIR/latest/.  $TDIR/$(get_date $i)
@@ -147,10 +139,11 @@ for i in `seq 0 ${age_array[-1]}` ; do
     used=""
   else 
     comp=$( df -h $TDIR | grep "^/" | awk '{ print $2 }'  )
-    used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  ) 
+    used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  )
+    free=$( df -h $TDIR | grep "^/" | awk '{ print $4 }'  ) 
     pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  ) 
   fi
-  printf "%03d|%1s|%-10s|%-9s|%-6s|%-6s|%-6s|\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$used" "$comp" "$pers"
+  printf "%03d|%1s|%-10s|%-9s|%-6s|%-6s|%-6s|%-6s|\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$comp" "$used" "$free" "$pers"
 done
 
 END=`date +%s`
