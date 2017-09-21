@@ -16,16 +16,6 @@ if [ "$4" != "" ] ; then
   today=`expr $(date +%s) + ${4} \* 86400`
 fi
 
-print_info()
-{
-  comp=$( df -h $2 | grep "^/" | awk '{ print $2 }'  )
-  used=$( df -h $2 | grep "^/" | awk '{ print $3 }'  )
-  free=$( df -h $2 | grep "^/" | awk '{ print $4 }'  ) 
-  pers=$( df -h $2 | grep "^/" | awk '{ print $5 }'  )
-  host=`hostname`
-  printf "%-10s|%s|%03d|%-12s|%-6s|%-6s|%-6s|%s\n"  "INFO-$1"  "`date +'%Y-%m-%d|%H:%M:%S'`" $3  "$host" "$comp" "$used" "$pers" "$2"
-}
- 
 get_age()
 {
    echo `expr  \( ${today} - $(date -d $1 +%s) \) / 86400`
@@ -52,12 +42,6 @@ echo '#!/bin/bash'       > $TDIR/script.sh
 echo "`basename $0` $*" >> $TDIR/script.sh
 chmod a+x                  $TDIR/script.sh
 
-
-START=`date +%s`
-echo ""
-print_info "START" $TDIR 0 
-echo ""
-
 age_array=($MASK)
 
 for i in `seq 0 ${age_array[-1]}` ; do
@@ -74,8 +58,9 @@ used=$( df -h $TDIR | grep "^/" | awk '{ print $3 }'  )
 free=$( df -h $TDIR | grep "^/" | awk '{ print $4 }'  ) 
 pers=$( df -h $TDIR | grep "^/" | awk '{ print $5 }'  )
 
-  echo "Backup-Source: ${SDIR}"
-  echo "Backup-Target: ${host}:${TDIR}"
+  echo "Backup-Source   : ${SDIR}"
+  echo "Backup-Host     : `hostname`"
+  echo "Backup-Directroy: ${TDIR}"
   echo "-------------------------------------------------------" 
   echo "age|m|directory |operation|size  |used  |free  |used %|"
   echo "-------------------------------------------------------"
@@ -107,6 +92,10 @@ for i in `seq 0 ${age_array[-1]}` ; do
   if (( $i == 0 )) ; then
     echo "-------------------------------------------------------"
     rsync -azS --numeric-ids --delete -e "ssh -p 22 -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa" $SDIR/./ $TDIR/latest/   
+    ret=$?
+    if [ "$ret" != "0" ] ; then
+      exit $ret
+    fi
     rm -rf   $TDIR/$(get_date $i)
     mkdir -p $TDIR/$(get_date $i)
     cp -la $TDIR/latest/.  $TDIR/$(get_date $i)
@@ -145,9 +134,5 @@ for i in `seq 0 ${age_array[-1]}` ; do
   fi
   printf "%03d|%1s|%-10s|%-9s|%-6s|%-6s|%-6s|%-6s|\n" $i "${arr_a[$i]}" "${dat}" "$cmd" "$comp" "$used" "$free" "$pers"
 done
-
-END=`date +%s`
-echo ""
-print_info "END"   $TDIR $((END-START))
 echo ""
 exit 0
