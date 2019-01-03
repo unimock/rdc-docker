@@ -8,12 +8,12 @@ services:
       context: ./build
       dockerfile: Dockerfile
       args:
-        DOCKER_IMAGE: docker:18.04.0-ce
-        ALPINE_IMAGE: alpine:3.7
+        DOCKER_IMAGE: docker:18.09.0
+        ALPINE_IMAGE: alpine:3.8
     ##################################################
     # RUN section
     ##################################################
-    image: unimock/rdc-docker:0.2.0
+    image: unimock/rdc-docker:0.3.0
     restart: unless-stopped
     container_name: rdc.XXX
     hostname: rdc.XXX
