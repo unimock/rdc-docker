@@ -6,6 +6,12 @@ set -e
 
 DAEMON=sshd
 
+if [ "$CLAMDSCAN_HOST" != "" ] ; then
+  sed -i "s|^LocalSocket |#LocalSocket |g"                 /etc/clamav/clamd.conf
+  sed -i "s|^#TCPSocket 3310|TCPSocket $CLAMDSCAN_PORT|g"  /etc/clamav/clamd.conf
+  sed -i "s|^#TCPAddr 127.0.0.1|TCPAddr $CLAMDSCAN_HOST|g" /etc/clamav/clamd.conf
+  sed -i "s|^#MaxDirectoryRecursion.*|MaxDirectoryRecursion $CLAMDSCAN_MRECDIR|g" /etc/clamav/clamd.conf
+fi
 
 echo "# check and apply for overwrites (ovw) :"
 if [ ! -e  /service/ovw ] ; then
