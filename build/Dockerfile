@@ -54,6 +54,7 @@ RUN echo "alias ll='ls -alF'"     >> /etc/profile
 RUN echo 'export TERM="xterm"'    >> /etc/profile
 
 RUN cp -f /usr/share/zoneinfo/Europe/Berlin /etc/localtime
+RUN passwd -u root
 
 COPY ./entry.sh /entry.sh
 
