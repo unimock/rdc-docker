@@ -91,9 +91,9 @@ for i in `seq 0 ${age_array[-1]}` ; do
   cmd=""
   if (( $i == 0 )) ; then
     echo "-------------------------------------------------------"
-    rsync -azS --numeric-ids --delete -e "ssh -p 22 -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa" $SDIR/./ $TDIR/latest/   
+    rsync -azS --numeric-ids --delete -e "ssh -p 22 -q -o "UserKnownHostsFile=/dev/null"  -o StrictHostKeyChecking=no -i /root/.ssh/id_rsa" $SDIR/./ $TDIR/latest/   
     ret=$?
-    if [ "$ret" != "0" ] ; then
+    if [ "$ret" != "0" -a "$ret" != "24" ] ; then # do not treat vanished as error
       exit $ret
     fi
     rm -rf   $TDIR/$(get_date $i)
