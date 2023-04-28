@@ -1,20 +1,3 @@
-#
-#                    ##        .            
-#              ## ## ##       ==            
-#           ## ## ## ##      ===            
-#       /""""""""""""""""\___/ ===        
-#  ~~~ {~~ ~~~~ ~~~ ~~~~ ~~ ~ /  ===- ~~~   
-#       \______ o          __/            
-#         \    \        __/             
-#          \____\______/                
-# 
-#          |          |
-#       __ |  __   __ | _  __   _
-#      /  \| /  \ /   |/  / _\ | 
-#      \__/| \__/ \__ |\_ \__  |
-#
-# Dockerfile for remote docker controller
-
 ARG DOCKER_IMAGE="docker:latest"
 ARG ALPINE_IMAGE="alpine:latest"
 ARG COMPOSE_VERSION="1.25.3"
@@ -22,8 +5,6 @@ ARG COMPOSE_VERSION="1.25.3"
 FROM ${DOCKER_IMAGE} AS docker
 #########################################
 FROM ${ALPINE_IMAGE}
-
-MAINTAINER Uni Mock <unimock@gate-m.de>
 
 RUN apk update && \
     apk add bash openssh rsync git clamav-daemon clamav-libunrar && \
@@ -34,10 +15,6 @@ RUN apk update && \
 
 RUN apk add rsnapshot tzdata curl
 COPY ./rsnapshot.conf /etc/rsnapshot.conf-unimock
-
-#RUN apk add py-pip && \
-#    pip install --upgrade pip && \ 
-#    pip install docker-compose
 
 RUN curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose && \
  chmod a+x /usr/local/bin/docker-compose
@@ -54,7 +31,7 @@ RUN echo "alias ll='ls -alF'"     >> /etc/profile
 RUN echo 'export TERM="xterm"'    >> /etc/profile
 
 RUN cp -f /usr/share/zoneinfo/Europe/Berlin /etc/localtime
-RUN passwd -u root
+#RUN passwd -u root
 
 COPY ./entry.sh /entry.sh
 
