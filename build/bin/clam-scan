@@ -1,0 +1,79 @@
+#!/bin/bash
+VERSION="0.0.1"
+CACHE=/var/cache/rdc/clam
+
+CMD="$1"
+DIR="$2"
+
+if [ "$DIR" = "" ] ; then
+  echo ""
+  echo "usage: `basename $0` scan|reset <directory>"
+  echo ""
+  exit 0
+fi
+
+mkdir -p "$CACHE"
+
+if [ "$CMD" = "reset" ] ; then
+  i=${DIR#/}
+  rm -rf "$CACHE/$i"
+  exit 0
+fi
+
+if [ "$CMD" = "scan" ] ; then
+  #
+  # remove files from cache which do not exist anymore
+  #
+  echo "#"
+  echo "# remove files from cache which do not exist anymore"
+  echo "#" 
+  readarray -t list <<<"$(find $CACHE -type f)"
+  for i in "${list[@]}" ; do
+    r=${i#$CACHE}
+    if [ ! -f "$r" ] ; then
+      rm -f "$i"
+      echo "remove md5 file <$i>"
+    fi
+  done
+  #
+  # check and scan
+  #
+  echo "#"
+  echo "# file scan"
+  echo "#"
+  virus_found=0
+  readarray -t list <<<"$(find $DIR -type f)"
+  nof=${#list[@]}
+  for (( idx=0; idx<${nof}; idx++ )) ; do
+    i="${list[$idx]}"
+    i=${i#/}
+    percent=$(( $idx * 100 / $nof ))
+    do_scan=0
+    now=$(date +"%s")
+    m_sec=$(stat -c '%Y' "$i")
+    age=$(( ( $now - $m_sec ) / 86400 )) 
+    if [  -f "$CACHE/$i" ] ; then
+      s_sec=$(stat -c '%Y' "$CACHE/$i")
+      last=$(( ( $now - $s_sec ) / 86400 ))
+      printf "%02d%s %5s %5s %s\n" $percent "%" "$age" "$last" "<$i>"
+      do_scan=0
+    else
+      do_scan=1
+    fi
+    if [ "$do_scan" = "1" ] ; then  
+      printf "%02d%s %5s %s" $percent "%" "$age" "scan  <$i> "
+      clamdscan -i "$i" >/dev/null
+      ret=$?
+      if [ "$ret" = "0" ] ; then
+	mkdir -p "`dirname "$CACHE/$i"`"
+	touch "$CACHE/$i"
+        echo "✅"
+      else
+        virus_found=1
+        echo "❌"
+        rm -f "$CACHE/$i"
+      fi
+    fi   
+  done
+  exit $virus_found
+fi
