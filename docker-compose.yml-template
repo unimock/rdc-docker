@@ -8,29 +8,29 @@ services:
       context: ./build
       dockerfile: Dockerfile
       args:
-        DOCKER_IMAGE: docker:20.10
-        ALPINE_IMAGE: alpine:3.17
-        COMPOSE_VERSION: 1.27.4
+        #DOCKER_IMAGE: docker:20.10
+        ALPINE_IMAGE: alpine:3.18
+        #COMPOSE_VERSION: 1.27.4
     ##################################################
     # RUN section
     ##################################################
-    image: unimock/rdc-docker:0.7.1
+    image: unimock/rdc-docker:0.8.0
     restart: unless-stopped
     container_name: rdc.XXX
     hostname: rdc.XXX
-    privileged: true
-    ports:
-     - "24277:22"
+    #privileged: true
+    #ports:
+    # - "24277:22"
     environment:
-      - RDC_PORT=24277
+      #- RDC_PORT=24277
       - TZ="Europe/Berlin"
       # - CLAMDSCAN_HOST=<hostname/ip>
       # - CLAMDSCAN_PORT=3310  
       # - CLAMDSCAN_MRECDIR=20  
     volumes:
-     - /Docker/rdc/service:/service               # ./ovw/etc/rsnapshot.conf, ...
-     - /Docker:/Docker
-     - /var/run/docker.sock:/var/run/docker.sock  # only for docker client
+      - /Volumes/rdc/service:/service               # ./ovw/etc/rsnapshot.conf, ...
+      #- /Docker:/Docker
+      #- /var/run/docker.sock:/var/run/docker.sock  # only for docker client
 volumes:  
   configure:
     driver: local
