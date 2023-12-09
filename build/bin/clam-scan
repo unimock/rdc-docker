@@ -1,6 +1,19 @@
 #!/bin/bash
 VERSION="0.0.1"
-CACHE=/var/cache/rdc/clam
+CACHE=/var/rdc/clam
+
+
+rescan="2 4 8 16 32 64 128 256 512 1024"
+
+opt_verbose=0
+CURROPT=""
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -v)  opt_verbose=1             ; shift 1 ;;
+    *)   CURROPT="$CURROPT \"$1\"" ; shift 1 ;;
+  esac
+done
+eval set -- $CURROPT
 
 CMD="$1"
 DIR="$2"
@@ -21,59 +34,94 @@ if [ "$CMD" = "reset" ] ; then
 fi
 
 if [ "$CMD" = "scan" ] ; then
+  rescan_oldest=${rescan##* }
+  rescan_array=" $rescan "
   #
   # remove files from cache which do not exist anymore
   #
-  echo "#"
-  echo "# remove files from cache which do not exist anymore"
-  echo "#" 
+  echo "# cleanup cache area ..."
   readarray -t list <<<"$(find $CACHE -type f)"
   for i in "${list[@]}" ; do
     r=${i#$CACHE}
     if [ ! -f "$r" ] ; then
       rm -f "$i"
-      echo "remove md5 file <$i>"
+      if [ "$opt_verbose" = "1" ] ; then
+        echo "remove cache file <$i>"
+      fi
     fi
   done
+  find $CACHE -type d -empty -delete  # remove empty directories
   #
   # check and scan
   #
-  echo "#"
-  echo "# file scan"
-  echo "#"
+  echo "# scanning area ..."
   virus_found=0
   readarray -t list <<<"$(find $DIR -type f)"
   nof=${#list[@]}
+  anz_scan=0
+  anz_error=0
+  anz_to_old=0
+  anz_today=0
+  anz_now_missing=0
   for (( idx=0; idx<${nof}; idx++ )) ; do
     i="${list[$idx]}"
     i=${i#/}
     percent=$(( $idx * 100 / $nof ))
-    do_scan=0
+    do_scan=""
     now=$(date +"%s")
+    if [ ! -f "$i" ] ; then
+      anz_now_missing=$(( anz_now_missing + 1 ))
+      continue
+    fi
     m_sec=$(stat -c '%Y' "$i")
     age=$(( ( $now - $m_sec ) / 86400 )) 
-    if [  -f "$CACHE/$i" ] ; then
-      s_sec=$(stat -c '%Y' "$CACHE/$i")
-      last=$(( ( $now - $s_sec ) / 86400 ))
-      printf "%02d%s %5s %5s %s\n" $percent "%" "$age" "$last" "<$i>"
-      do_scan=0
+    if [ ! -f "$CACHE/$i" ] ; then
+      do_scan="init"
     else
-      do_scan=1
+      s_sec=$(stat -c '%Y' "$CACHE/$i")
+      last=$(( ( $now - $s_sec ) / 86400 )) # days of last scan
+      if [ "$opt_verbose" = "1" ] ; then
+        printf "%02d%s %5s %5s %s\n" $percent "%" "$age" "$last" "</$i>"
+      fi
+      if [ "$last" = "0" ] ; then
+	anz_today=$(( anz_today + 1 ))
+	continue
+      fi
+      if [[ $age -gt $rescan_oldest ]] ; then
+	 anz_to_old=$(( anz_to_old + 1 ))
+         continue
+      fi
+      if [[ $rescan_array == *" $age "* ]] ; then
+         do_scan="rescan"
+      fi 
+      # check for rescan and set do_scan="rescan"
+      # wenn age in "$rescan", last aber kleiner, dann skip
     fi
-    if [ "$do_scan" = "1" ] ; then  
-      printf "%02d%s %5s %s" $percent "%" "$age" "scan  <$i> "
+    if [ "$do_scan" != "" ] ; then  
+      printf "%02d%s %5s %s %s " $percent "%" "$age" "$do_scan" "</$i>"
       clamdscan -i "$i" >/dev/null
       ret=$?
       if [ "$ret" = "0" ] ; then
-	mkdir -p "`dirname "$CACHE/$i"`"
-	touch "$CACHE/$i"
         echo "✅"
+	anz_scan=$(( anz_scan + 1 ))
+       	mkdir -p "`dirname "$CACHE/$i"`"
+	      touch "$CACHE/$i"
       else
         virus_found=1
-        echo "❌"
+	echo "❌ (ret=$ret)"
+        clamdscan -i "$i"
+	anz_error=$(( anz_error + 1 ))
         rm -f "$CACHE/$i"
       fi
     fi   
   done
+  echo "#"
+  echo "# anz_files  = $nof"
+  echo "# anz_scan   = $anz_scan"
+  echo "# anz_error  = $anz_error"
+  echo "# anz_today  = $anz_today"
+  echo "# anz_to_old = $anz_to_old"
+  echo "# anz_now_missing = $anz_now_missing"
+  echo "#"
   exit $virus_found
 fi
