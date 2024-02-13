@@ -7,6 +7,10 @@ services:
     build:
       context: ./build
       dockerfile: Dockerfile
+      x-bake:
+        platforms:
+          - linux/amd64
+          - linux/arm64
       args:
         #DOCKER_IMAGE: docker:20.10
         ALPINE_IMAGE: alpine:3.18
